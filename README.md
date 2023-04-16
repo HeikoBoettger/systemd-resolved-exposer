@@ -2,9 +2,9 @@
 
 Provides a solution to access the systemd-resolved daemon running on the host-system from docker and other containerization and virtualization solution.
 
-[TOC]
+[[__TOC__]]
 
-#ä The problem to solve
+## The problem to solve
 
 The major problem to solve is that software like docker (containerd) currently doesn't have a good integration to reuse the DNS configuration. When you have a setup using split DNS or working in an environment where you are frequently switching networks connections (VPN on/off, moving from the desk using the docking station to meeting rooms), you will likely have DNS hostname resolution issues using your docker containers.
 
