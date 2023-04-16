@@ -47,7 +47,7 @@ There are several ways to solve this and ended up using dnsmasq running inside a
 
 - you need to have docker installed
 - not available before running docker, there might be cases where you want to expose systemd-resolved even earlier
-- not reliable available to other docker containers during startup, while the exposer container starts it takes a while until the service is working which will prevent other container from using it. other containers might even start before the exposer container and fail to resolve hostnames. I considered this to a non-problem since dealing with network failures during startup is a very common issue also when separate database containers.
+- not reliably available to other docker containers during startup, while the exposer container starts it takes a while until the service is working which will prevent other container from using it. other containers might even start before the exposer container and fail to resolve hostnames. I considered this to a non-problem since dealing with network failures during startup is a very common issue also when separate database containers.
 
 ## Advantage of my approach
 
@@ -56,13 +56,18 @@ There are several ways to solve this and ended up using dnsmasq running inside a
 
 # Installation
 
-Currently I provide no prebuild docker-image on any of the docker registry on the web. So you have to use the make files in the repository to build it.
+There are two options, either build it from scratch or my prebuilt image
+here on github.
 
-## Prerequisites
+*Note* This is a free account which has only limited traffic on the github package registry. I kindly ask everybody to pull the image only and put it into your own registry, especially if you are using it in your company.
+
+## Building from scratch
+
+### prerequisites
 
 You need to have `bash`, `make`, `curl` and `docker` installed to get started as well what ever is needed to get the content of this repository.
 
-## Build the solution
+### building
 
 1. Go to dnsmasq/docker, run `make`.
 2. Go to docekr, run `make`
@@ -71,20 +76,33 @@ Note: there is already a subdirectory `build` to compile a dnsmasq-binary for a 
 
 ## Run the solution
 
-Simply run `make run-as-service` to run and register the container to be restarted on the next run.
+Simply go into the `docker` subdirectory and run `make run-as-service` to run and register the container to be restarted on the next run.
 
 For testing I also provide as simple `make run`.
 
-If you have a local docker requistry in you company you might put the docker image just there. This will turn the installation and start in a one-liner.
+If you have a local docker requistry in you company you might put the docker image just there. This will turn the installation and start in a one-liner:
 
-### Customization
+```bash
+docker run -d --restart unless-stopped --cap-add NET_ADMIN --name systemd-resolved-exposer --network=host ghcr.io/heikoboettger/systemd-resolved-exposer:1.0.0 -k
+```
+
+## Customization
 
 When the container starts it will create a bridge `br-resolv` on the host 
 using the ip `100.65.0.1` and subnet `/24`. Forwarding will be configured to forward to the `127.0.0.53` where systemd-resolved is usually running. All these three setting can be overwritten be setting variable found in `docker/entrypoint.sh`.
 
 Note: don't forget to include the subnet mask when defining the bridge ip option. I tried to choose a variable name that makes that clear but I better mention it to be safe. There not much checks to confirm right values.
 
-## Using it
+## Testing
+
+When starting the container you have to wait a few seconds until everything 
+is setup. If you haven't changed the default settings, you can test it using:
+
+```bash
+nslookup google.de 100.65.0.1
+```
+
+## Using the exposer
 
 There is no code setting up the exposer for use in docker or VMs but here is an
 example on how to setup docker on ubuntu 20.04 to use the systemd-resolved from host-system using the forwarding setup on the bridge:
@@ -98,4 +116,8 @@ example on how to setup docker on ubuntu 20.04 to use the systemd-resolved from 
 } 
 ```
 
+## Final words
+
+This solution is provided as is without any warrenty and at your own risk.
+I didn't spent time into adding checks at the startup of the container to surpress error message such when the bridge already exists or detecting bridge-name and ip-address conflicts.
 

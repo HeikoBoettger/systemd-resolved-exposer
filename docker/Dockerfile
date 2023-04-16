@@ -1,4 +1,5 @@
-FROM heboettger/dnsmasq
+ARG DNSMASQ_IMAGE
+FROM ${DNSMASQ_IMAGE}
 
 RUN apt-get update && \
     apt-get install -y iproute2 && \
