@@ -2,6 +2,8 @@
 
 Provides a solution to access the systemd-resolved daemon running on the host-system from docker and other containerization and virtualization solution.
 
+[TOC]
+
 #ä The problem to solve
 
 The major problem to solve is that software like docker (containerd) currently doesn't have a good integration to reuse the DNS configuration. When you have a setup using split DNS or working in an environment where you are frequently switching networks connections (VPN on/off, moving from the desk using the docking station to meeting rooms), you will likely have DNS hostname resolution issues using your docker containers.
@@ -76,6 +78,12 @@ Note: there is already a subdirectory `build` to compile a dnsmasq-binary for a 
 
 ## Run the solution
 
+### Prerequisites
+
+The minimum that is need to execute the solution is docker and a dns-service such as systemd-resolved where the dns-request are delegated to.
+
+### Run the container
+
 Simply go into the `docker` subdirectory and run `make run-as-service` to run and register the container to be restarted on the next run.
 
 For testing I also provide as simple `make run`.
@@ -86,14 +94,14 @@ If you have a local docker requistry in you company you might put the docker ima
 docker run -d --restart unless-stopped --cap-add NET_ADMIN --name systemd-resolved-exposer --network=host ghcr.io/heikoboettger/systemd-resolved-exposer:1.0.0 -k
 ```
 
-## Customization
+### Customization
 
 When the container starts it will create a bridge `br-resolv` on the host 
 using the ip `100.65.0.1` and subnet `/24`. Forwarding will be configured to forward to the `127.0.0.53` where systemd-resolved is usually running. All these three setting can be overwritten be setting variable found in `docker/entrypoint.sh`.
 
 Note: don't forget to include the subnet mask when defining the bridge ip option. I tried to choose a variable name that makes that clear but I better mention it to be safe. There not much checks to confirm right values.
 
-## Testing
+### Testing
 
 When starting the container you have to wait a few seconds until everything 
 is setup. If you haven't changed the default settings, you can test it using:
