@@ -1,4 +1,4 @@
-# systemd-resolve-exposer
+# systemd-resolved-exposer
 
 Provides a solution to access the systemd-resolved daemon running on the host-system from docker and other containerization and virtualization solution.
 
@@ -121,6 +121,22 @@ example on how to setup docker on ubuntu 20.04 to use the systemd-resolved from 
   "dns" : [ "100.65.0.1" ]
 } 
 ```
+
+## Other usages
+
+### Zscaler DNS timeout worksaround
+
+When using zscaler client 1.4.0.79 on linux and having the ZIA (internet security) component enabled you may face issues such as slow loading of webpages.
+I even observed timeouts and situations where a webpage wasn't loading until multiple attempts hitting the browsers reload button.
+After investigation of the issue it turned out that the zscaler client registers three DNS servers on the zcctun-bridge but only
+one of them fully working. In a discussion with zscaler support it turned out there is a 1:1 mapping between the DNS servers running on the bridge and the DNS servers on
+the clients internet uplink. As a result the secondary and ternary DNS entry isn't working for resolving internet requests when your home network only has one DNS server.
+
+If you have a commonly used setup with a simple router you may be able to configure it to provide two more external DNS servers.
+However if you do that name resolution to internal computers will only work on the primary server if you keep your router as primary DNS.
+That result again in inconsistent behavior and situations where you can reach your computers only randomly.
+
+
 
 ## Final words
 
