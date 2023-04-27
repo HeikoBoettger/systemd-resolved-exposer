@@ -128,15 +128,22 @@ example on how to setup docker on ubuntu 20.04 to use the systemd-resolved from 
 
 When using zscaler client 1.4.0.79 on linux and having the ZIA (internet security) component enabled you may face issues such as slow loading of webpages.
 I even observed timeouts and situations where a webpage wasn't loading until multiple attempts hitting the browsers reload button.
-After investigation of the issue it turned out that the zscaler client registers three DNS servers on the zcctun-bridge but only
-one of them fully working. In a discussion with zscaler support it turned out there is a 1:1 mapping between the DNS servers running on the bridge and the DNS servers on
-the clients internet uplink. As a result the secondary and ternary DNS entry isn't working for resolving internet requests when your home network only has one DNS server.
+After investigation of the issue it turned out that the zscaler client registers three DNS servers on the zcctun-bridge but only one of them fully working. In a discussion with zscaler support it was revealed that there is a 1:1 mapping between the DNS servers running on the bridge and the DNS servers on the clients internet uplink. As a result the secondary and ternary DNS entry isn't working for resolving internet requests when your home network only has one DNS server. They are working on a fix but until then we need a workaround.
 
 If you have a commonly used setup with a simple router you may be able to configure it to provide two more external DNS servers.
-However if you do that name resolution to internal computers will only work on the primary server if you keep your router as primary DNS.
-That result again in inconsistent behavior and situations where you can reach your computers only randomly.
+However if you do that name resolution to internal computers will only work on the primary server assuming it's your routers DNS.
+That results again in inconsistent behavior and situations where you can reach your computers via hostname only randomly.
 
+As a workaround you can setup an additional bridge with two systemd-resolved-exposer instances running on that bridge which instead of redirecting the request to systemd-resolved on your host are reconfigured to send them to your router.
 
+Here are the steps you usually have to do in a home-network with DHCP and DNS provided directly by your home router:
+
+1. ```bash
+   YOUR_ROUTERS_IP="192.168.0.1" # change this to your routers ip-address
+   docker run -d --restart unless-stopped --cap-add NET_ADMIN --name systemd-resolved-exposer --network=host -e "BRIDGE_NAME=bridge-redirect" -e "BRIDGE_IP_ADDR_SUBNET=100.66.0.1/24" -e DNS_SERVER_IP_ADDR="${YOUR_ROUTERS_IP}" ghcr.io/heikoboettger/systemd-resolved-exposer:1.0.0 -k
+   docker run -d --restart unless-stopped --cap-add NET_ADMIN --name systemd-resolved-exposer --network=host -e "BRIDGE_NAME=bridge-redirect" -e "BRIDGE_IP_ADDR_SUBNET=100.66.0.2/24" -e DNS_SERVER_IP_ADDR="${YOUR_ROUTERS_IP}"  ghcr.io/heikoboettger/systemd-resolved-exposer:1.0.0 -k
+   ```
+2. Open the settings of your uplink, disable the option to automatically configure DNS-servers via DHCP and manually define your routers-ip, the first bridge-ip `100.66.0.1` and the second bridge-ip `100.66.0.2`. Save and reload the network configuration (or reboot if that is easier for you)
 
 ## Final words
 
